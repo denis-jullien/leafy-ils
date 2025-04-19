@@ -1,31 +1,33 @@
 <script>
   import { api } from '$lib/services/api';
-  import { authStore } from '$lib/stores/authStore';
   import { goto } from '$app/navigation';
   
   let email = '';
   let password = '';
+  let confirmPassword = '';
   let error = '';
   let loading = false;
   
-  async function handleLogin() {
+  async function handleRegister() {
     error = '';
+    
+    if (password !== confirmPassword) {
+      error = 'Passwords do not match';
+      return;
+    }
+    
     loading = true;
     
     try {
-      const data = await api.login(email, password);
-      authStore.setToken(data.access_token);
-
-      console.log('data:', data);
+      await api.register({
+        email,
+        password
+      });
       
-      // Fetch user details
-      // This would need to be implemented in your API service
-      // For now, we'll just set a basic user object
-      authStore.setUser({ email, is_superuser: true });
-      
-      goto('/');
+      // Redirect to login page after successful registration
+      goto('/login?registered=true');
     } catch (err) {
-      error = 'Invalid email or password';
+      error = 'Registration failed. Please try again.';
     } finally {
       loading = false;
     }
@@ -35,7 +37,7 @@
 <div class="max-w-md mx-auto">
   <div class="card bg-base-100 shadow-xl">
     <div class="card-body">
-      <h2 class="card-title text-2xl font-bold mb-6">Login</h2>
+      <h2 class="card-title text-2xl font-bold mb-6">Register</h2>
       
       {#if error}
         <div class="alert alert-error mb-4">
@@ -46,7 +48,7 @@
         </div>
       {/if}
       
-      <form on:submit|preventDefault={handleLogin}>
+      <form on:submit|preventDefault={handleRegister}>
         <div class="form-control">
           <label class="label" for="email">
             <span class="label-text">Email</span>
@@ -75,12 +77,26 @@
           />
         </div>
         
+        <div class="form-control mt-4">
+          <label class="label" for="confirmPassword">
+            <span class="label-text">Confirm Password</span>
+          </label>
+          <input 
+            type="password" 
+            id="confirmPassword"
+            bind:value={confirmPassword} 
+            placeholder="Confirm your password" 
+            class="input input-bordered w-full" 
+            required
+          />
+        </div>
+        
         <div class="form-control mt-6">
           <button type="submit" class="btn btn-primary" disabled={loading}>
             {#if loading}
               <span class="loading loading-spinner"></span>
             {/if}
-            Login
+            Register
           </button>
         </div>
       </form>
@@ -88,8 +104,8 @@
       <div class="divider">OR</div>
       
       <div class="text-center">
-        <p>Don't have an account?</p>
-        <a href="/register" class="link link-primary">Register</a>
+        <p>Already have an account?</p>
+        <a href="/login" class="link link-primary">Login</a>
       </div>
     </div>
   </div>

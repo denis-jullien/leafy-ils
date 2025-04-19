@@ -11,6 +11,7 @@ from backend.users import (
     fastapi_users,
 )
 from backend.models import User, UserCreate, UserRead, UserUpdate
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -20,6 +21,22 @@ async def startup(app: FastAPI):
 
 
 app = FastAPI(lifespan=startup)
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080"
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 API_PREFIX = "/api/v1"
 
@@ -70,9 +87,9 @@ async def authenticated_route(user: User = Depends(current_active_user)):
     return {"message": f"Hello  {user.email}!"}
 
 
-# Serve static frontend
-app.mount(
-    "/",
-    StaticFiles(directory="frontend/build", html=True, check_dir=False),
-    name="sveltekit",
-)
+# # Serve static frontend
+# app.mount(
+#     "/",
+#     StaticFiles(directory="frontend/build", html=True, check_dir=False),
+#     name="sveltekit",
+# )
