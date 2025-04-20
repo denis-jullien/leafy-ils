@@ -80,17 +80,19 @@
             <tr>
               <td>
                 <div class="flex items-center gap-3">
-                  {#if circulation.book.cover}
-                    <div class="avatar">
-                      <div class="mask mask-squircle w-12 h-12">
-                        <img src={circulation.book.cover} alt={circulation.book.title} />
+                  {#if circulation.book}
+                    {#if circulation.book.cover}
+                      <div class="avatar">
+                        <div class="mask mask-squircle w-12 h-12">
+                          <img src={circulation.book.cover} alt={circulation.book.title} />
+                        </div>
                       </div>
+                    {/if}
+                    <div>
+                      <div class="font-bold">{circulation.book.title}</div>
+                      <div class="text-sm opacity-70">{circulation.book.author}</div>
                     </div>
                   {/if}
-                  <div>
-                    <div class="font-bold">{circulation.book.title}</div>
-                    <div class="text-sm opacity-70">{circulation.book.author}</div>
-                  </div>
                 </div>
               </td>
               <td>{new Date(circulation.borrowed_date).toLocaleDateString()}</td>
@@ -107,6 +109,7 @@
               </td>
               <td>
                 <div class="flex gap-2">
+                  {#if circulation.book}
                   <a href={`/books/${circulation.book.id}`} class="btn btn-sm btn-outline">
                     Details
                   </a>
@@ -116,6 +119,7 @@
                   >
                     Return
                   </button>
+                  {/if}
                 </div>
               </td>
             </tr>

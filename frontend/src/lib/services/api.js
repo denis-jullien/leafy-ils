@@ -220,5 +220,55 @@ export const api = {
     }
     
     throw new Error('Failed to return book');
+  },
+  async getUsers() {
+    const response = await fetchWithAuth('/users');
+    
+    if (response.ok) {
+      return await response.json();
+    }
+    
+    throw new Error('Failed to fetch users');
+  },
+  
+  async createUser(userData) {
+    const response = await fetchWithAuth('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+    
+    if (response.ok) {
+      return await response.json();
+    }
+    
+    throw new Error('Failed to create user');
+  },
+  
+  async updateUser(userId, userData) {
+    const response = await fetchWithAuth(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(userData)
+    });
+    
+    if (response.ok) {
+      return await response.json();
+    }
+    
+    throw new Error('Failed to update user');
+  },
+  
+  async deleteUser(userId) {
+    const response = await fetchWithAuth(`/users/${userId}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      return true;
+    }
+    
+    throw new Error('Failed to delete user');
   }
 };
+
+// Add these methods to your existing api.js file
+

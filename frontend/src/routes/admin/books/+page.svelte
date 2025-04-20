@@ -177,7 +177,7 @@
                   <a href={`/books/${book.id}`} class="btn btn-sm btn-outline">
                     View
                   </a>
-                  <a href={`/admin/books/edit/${book.id}`} class="btn btn-sm btn-primary">
+                  <a href={`/books/${book.id}?edit=true`} class="btn btn-sm btn-primary">
                     Edit
                   </a>
                   <button 

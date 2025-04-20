@@ -11,7 +11,9 @@
   let newUser = {
     email: '',
     password: '',
-    is_superuser: false
+    is_superuser: false,
+    is_active: true,
+    is_verified: true
   };
   
   async function fetchUsers() {
@@ -24,13 +26,8 @@
     error = null;
     
     try {
-      // This would need to be implemented in your API service
-      // For now, we'll use a placeholder
-      users = [
-        { id: 1, email: 'admin@example.com', is_superuser: true, is_active: true },
-        { id: 2, email: 'user@example.com', is_superuser: false, is_active: true },
-        { id: 3, email: 'librarian@example.com', is_superuser: false, is_active: true }
-      ];
+      // Use the API service to fetch users
+      users = await api.getUsers();
     } catch (err) {
       error = 'Failed to load users. Please try again.';
       console.error(err);
@@ -41,40 +38,72 @@
   
   async function addUser() {
     try {
-      // This would need to be implemented in your API service
-      // For now, we'll just add to the local array
-      const id = users.length + 1;
-      users = [...users, { id, ...newUser, is_active: true }];
+      // Use the API service to create a new user
+      const createdUser = await api.createUser(newUser);
+      users = [...users, createdUser];
+      
+      // Reset form and close modal
+      newUser = {
+        email: '',
+        password: '',
+        is_superuser: false,
+        is_active: true,
+        is_verified: true
+      };
       showAddUserModal = false;
-      newUser = { email: '', password: '', is_superuser: false };
+      
     } catch (err) {
-      alert('Failed to add user. Please try again.');
+      error = `Failed to add user: ${err.message}`;
       console.error(err);
     }
   }
   
-  async function toggleUserStatus(userId) {
+  async function toggleUserStatus(userId, isActive) {
     try {
-      // This would need to be implemented in your API service
-      // For now, we'll just update the local array
+      // Use the API service to update user status
+      const updatedUser = await api.updateUser(userId, { is_active: !isActive });
+      
+      // Update the user in the local array
       users = users.map(user => 
-        user.id === userId ? { ...user, is_active: !user.is_active } : user
+        user.id === userId ? updatedUser : user
       );
+      
     } catch (err) {
-      alert('Failed to update user status. Please try again.');
+      error = `Failed to update user: ${err.message}`;
+      console.error(err);
+    }
+  }
+  
+  async function toggleAdminStatus(userId, isSuperuser) {
+    try {
+      // Use the API service to update user admin status
+      const updatedUser = await api.updateUser(userId, { is_superuser: !isSuperuser });
+      
+      // Update the user in the local array
+      users = users.map(user => 
+        user.id === userId ? updatedUser : user
+      );
+      
+    } catch (err) {
+      error = `Failed to update user: ${err.message}`;
       console.error(err);
     }
   }
   
   async function deleteUser(userId) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
     
     try {
-      // This would need to be implemented in your API service
-      // For now, we'll just remove from the local array
+      // Use the API service to delete a user
+      await api.deleteUser(userId);
+      
+      // Remove the user from the local array
       users = users.filter(user => user.id !== userId);
+      
     } catch (err) {
-      alert('Failed to delete user. Please try again.');
+      error = `Failed to delete user: ${err.message}`;
       console.error(err);
     }
   }
@@ -82,77 +111,81 @@
   onMount(fetchUsers);
 </script>
 
-<div>
+<div class="p-6">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Manage Users</h1>
-    
+    <h1 class="text-2xl font-bold">User Management</h1>
     <button class="btn btn-primary" on:click={() => showAddUserModal = true}>
-      Add New User
+      Add User
     </button>
   </div>
   
-  {#if loading}
-    <div class="flex justify-center my-12">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
-  {:else if error}
-    <div class="alert alert-error">
+  {#if error}
+    <div class="alert alert-error mb-4">
       <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <span>{error}</span>
     </div>
-  {:else if users.length === 0}
-    <div class="text-center my-12">
-      <h3 class="text-xl font-semibold">No users found</h3>
-      <p class="mt-2">Add new users to get started.</p>
+  {/if}
+  
+  {#if loading}
+    <div class="flex justify-center my-12">
+      <span class="loading loading-spinner loading-lg"></span>
     </div>
   {:else}
     <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+      <table class="table w-full">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Email</th>
-            <th>Role</th>
             <th>Status</th>
+            <th>Admin</th>
+            <th>Verified</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {#each users as user}
             <tr>
-              <td>{user.id}</td>
               <td>{user.email}</td>
               <td>
-                {#if user.is_superuser}
-                  <span class="badge badge-primary">Admin</span>
-                {:else}
-                  <span class="badge">User</span>
-                {/if}
-              </td>
-              <td>
-                {#if user.is_active}
-                  <span class="badge badge-success">Active</span>
-                {:else}
-                  <span class="badge badge-error">Inactive</span>
-                {/if}
-              </td>
-              <td>
-                <div class="flex gap-2">
-                  <button 
-                    class="btn btn-sm btn-outline"
-                    on:click={() => toggleUserStatus(user.id)}
-                  >
-                    {user.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button 
-                    class="btn btn-sm btn-error"
-                    on:click={() => deleteUser(user.id)}
-                  >
-                    Delete
-                  </button>
+                <div class="form-control">
+                  <label class="label cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      class="toggle toggle-success" 
+                      checked={user.is_active}
+                      on:change={() => toggleUserStatus(user.id, user.is_active)}
+                    />
+                  </label>
                 </div>
+              </td>
+              <td>
+                <div class="form-control">
+                  <label class="label cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      class="toggle toggle-primary" 
+                      checked={user.is_superuser}
+                      on:change={() => toggleAdminStatus(user.id, user.is_superuser)}
+                    />
+                  </label>
+                </div>
+              </td>
+              <td>
+                {#if user.is_verified}
+                  <span class="badge badge-success">Verified</span>
+                {:else}
+                  <span class="badge badge-warning">Not Verified</span>
+                {/if}
+              </td>
+              <td>
+                <button 
+                  class="btn btn-error btn-sm"
+                  on:click={() => deleteUser(user.id)}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           {/each}
@@ -160,65 +193,61 @@
       </table>
     </div>
   {/if}
-  
-  <!-- Add User Modal -->
-  {#if showAddUserModal}
-    <div class="modal modal-open">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg">Add New User</h3>
+</div>
+
+<!-- Add User Modal -->
+{#if showAddUserModal}
+  <div class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg mb-4">Add New User</h3>
+      
+      <form on:submit|preventDefault={addUser}>
+        <div class="form-control mb-4">
+          <label class="label" for="email">
+            <span class="label-text">Email</span>
+          </label>
+          <input 
+            type="email" 
+            id="email"
+            bind:value={newUser.email} 
+            class="input input-bordered" 
+            required
+          />
+        </div>
         
-        <div class="py-4">
-          <div class="form-control">
-            <label class="label" for="email">
-              <span class="label-text">Email</span>
-            </label>
+        <div class="form-control mb-4">
+          <label class="label" for="password">
+            <span class="label-text">Password</span>
+          </label>
+          <input 
+            type="password" 
+            id="password"
+            bind:value={newUser.password} 
+            class="input input-bordered" 
+            required
+          />
+        </div>
+        
+        <div class="form-control mb-4">
+          <label class="label cursor-pointer">
+            <span class="label-text">Admin User</span>
             <input 
-              type="email" 
-              id="email"
-              bind:value={newUser.email} 
-              placeholder="Enter email" 
-              class="input input-bordered w-full" 
-              required
+              type="checkbox" 
+              class="toggle toggle-primary" 
+              bind:checked={newUser.is_superuser}
             />
-          </div>
-          
-          <div class="form-control mt-4">
-            <label class="label" for="password">
-              <span class="label-text">Password</span>
-            </label>
-            <input 
-              type="password" 
-              id="password"
-              bind:value={newUser.password} 
-              placeholder="Enter password" 
-              class="input input-bordered w-full" 
-              required
-            />
-          </div>
-          
-          <div class="form-control mt-4">
-            <label class="cursor-pointer label justify-start gap-2">
-              <input 
-                type="checkbox" 
-                class="checkbox" 
-                bind:checked={newUser.is_superuser} 
-              />
-              <span class="label-text">Admin privileges</span>
-            </label>
-          </div>
+          </label>
         </div>
         
         <div class="modal-action">
-          <button class="btn" on:click={() => showAddUserModal = false}>Cancel</button>
-          <button 
-            class="btn btn-primary" 
-            on:click={addUser}
-            disabled={!newUser.email || !newUser.password}
-          >
+          <button type="button" class="btn" on:click={() => showAddUserModal = false}>
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
             Add User
           </button>
         </div>
-      </div>
+      </form>
     </div>
-  {/if}
-</div>
+  </div>
+{/if}

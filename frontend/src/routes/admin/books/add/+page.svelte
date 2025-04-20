@@ -36,8 +36,8 @@
     error = null;
     
     try {
-      await api.createBook(book);
-      goto('/admin/books');
+      const newBook = await api.createBook(book);
+      goto(`/books/${newBook.id}?edit=true`);
     } catch (err) {
       error = 'Failed to create book. Please try again.';
       console.error(err);

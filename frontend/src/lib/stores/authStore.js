@@ -12,6 +12,43 @@ function createAuthStore() {
     isAdmin: false
   });
 
+  async function fetchUserData() {
+    if (browser && initialToken) {
+      try {
+        const response = await fetch('/users/me', {
+          headers: {
+            'Authorization': `Bearer ${initialToken}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          update(state => ({
+            ...state,
+            user: userData,
+            isAdmin: userData?.is_superuser || false
+          }));
+        } else {
+          // If token is invalid, clear it
+          localStorage.removeItem('token');
+          set({
+            token: null,
+            user: null,
+            isAuthenticated: false,
+            isAdmin: false
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    }
+  }
+
+  // Fetch user data on initialization
+  if (browser && initialToken) {
+    fetchUserData();
+  }
+
   return {
     subscribe,
     setToken: (token) => {
@@ -28,6 +65,11 @@ function createAuthStore() {
         token,
         isAuthenticated: !!token
       }));
+      
+      // Fetch user data when token is set
+      if (token) {
+        fetchUserData();
+      }
     },
     setUser: (user) => {
       update(state => ({
@@ -47,7 +89,8 @@ function createAuthStore() {
         isAuthenticated: false,
         isAdmin: false
       });
-    }
+    },
+    refreshUserData: fetchUserData
   };
 }
 
